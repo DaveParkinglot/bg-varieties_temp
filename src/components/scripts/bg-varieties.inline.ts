@@ -412,66 +412,73 @@ function init() {
       }
     } else if (type === "fractals") {
       ctx.clearRect(0, 0, width, height);
-      fractalTime += 0.01 * speed;
+      fractalTime += 0.005 * speed;
 
-      const baseSway = Math.sin(fractalTime) * 0.05;
-      let mouseInfluence = 0;
-      if (mouse.active) {
-        mouseInfluence = ((mouse.x / width) - 0.5) * 0.15;
-      }
+      const rotation = fractalTime * 0.2;
+      const cx = width / 2;
+      const cy = height / 2;
       
-      const totalSway = baseSway + mouseInfluence;
-      const treeCount = density > 60 ? 3 : (density > 25 ? 1 : 1);
+      const baseLength = Math.min(width, height) * 0.12 * (density / 50 + 0.5);
+      const branches = density > 65 ? 8 : (density > 35 ? 6 : 5);
+      const maxDepth = density > 75 ? 7 : (density > 35 ? 6 : 5);
       
-      if (treeCount === 3) {
-        drawTree(width * 0.25, height, height * 0.18, -Math.PI / 2, 7, totalSway * 0.8, resolvedPalette[1] || primaryThemeColor);
-        drawTree(width * 0.75, height, height * 0.18, -Math.PI / 2, 7, totalSway * 0.8, resolvedPalette[2] || primaryThemeColor);
-        drawTree(width * 0.5, height, height * 0.24, -Math.PI / 2, 9, totalSway, resolvedPalette[0] || primaryThemeColor);
-      } else {
-        const treeHeight = Math.min(height * 0.25, 200) * (density / 50 + 0.5);
-        const maxDepth = density > 40 ? 9 : 8;
-        drawTree(width * 0.5, height, treeHeight, -Math.PI / 2, maxDepth, totalSway, resolvedPalette[0] || primaryThemeColor);
+      for (let i = 0; i < branches; i++) {
+        const startAngle = rotation + (i * Math.PI * 2 / branches);
+        drawMandala(cx, cy, baseLength, startAngle, maxDepth, fractalTime);
       }
     }
 
     currentAnimationId = requestAnimationFrame(loop);
   }
 
-  function drawTree(x: number, y: number, length: number, angle: number, depth: number, sway: number, baseColor: string) {
+  function drawMandala(x: number, y: number, length: number, angle: number, depth: number, time: number) {
     if (depth === 0) return;
 
     const x2 = x + Math.cos(angle) * length;
     const y2 = y + Math.sin(angle) * length;
 
-    ctx.lineWidth = depth * 0.8;
+    ctx.lineWidth = depth * 0.5;
     ctx.lineCap = "round";
 
-    let color = baseColor;
+    let color = resolvedPalette[0] || primaryThemeColor;
     if (resolvedPalette.length > 1) {
       const paletteIndex = Math.min(
         resolvedPalette.length - 1,
-        Math.floor((1 - depth / 10) * resolvedPalette.length)
+        Math.floor((1 - depth / 7) * resolvedPalette.length)
       );
       color = resolvedPalette[paletteIndex];
     }
-    ctx.strokeStyle = toRGBA(color, 0.45 + (depth * 0.05));
+    
+    ctx.strokeStyle = toRGBA(color, 0.08 + (depth * 0.03));
 
     ctx.beginPath();
     ctx.moveTo(x, y);
     ctx.lineTo(x2, y2);
     ctx.stroke();
 
-    const nextLength = length * 0.75;
-    const leftAngle = angle - 0.35 + sway;
-    const rightAngle = angle + 0.35 + sway;
+    const nextLength = length * 0.68;
+    const sway = Math.sin(time * 2 + depth) * 0.05;
+    
+    let mouseAngleOffset = 0;
+    if (mouse.active) {
+      const dx = mouse.x - x2;
+      const dy = mouse.y - y2;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 250) {
+        const angleToMouse = Math.atan2(dy, dx);
+        mouseAngleOffset = (angleToMouse - angle) * 0.06 * (1 - dist / 250);
+      }
+    }
 
-    drawTree(x2, y2, nextLength, leftAngle, depth - 1, sway, baseColor);
-    drawTree(x2, y2, nextLength, rightAngle, depth - 1, sway, baseColor);
+    const angleSpread = 0.45 + Math.sin(time * 0.5) * 0.05;
+
+    drawMandala(x2, y2, nextLength, angle - angleSpread + sway + mouseAngleOffset, depth - 1, time);
+    drawMandala(x2, y2, nextLength, angle + angleSpread + sway + mouseAngleOffset, depth - 1, time);
 
     if (depth === 1) {
       ctx.beginPath();
-      ctx.arc(x2, y2, 4, 0, Math.PI * 2);
-      ctx.fillStyle = toRGBA(resolvedPalette[0] || primaryThemeColor, 0.85);
+      ctx.arc(x2, y2, 2, 0, Math.PI * 2);
+      ctx.fillStyle = toRGBA(resolvedPalette[0] || primaryThemeColor, 0.3);
       ctx.fill();
     }
   }

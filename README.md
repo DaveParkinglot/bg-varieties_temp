@@ -3,7 +3,7 @@
 A background generator component that renders beautiful, dynamic canvas animations as a background behind your Quartz site. It features four distinct, highly configurable styles:
 
 1. **Perlin Noise** (`"perlin-noise"`): A flowing vector field guided by 2D Perlin noise.
-2. **Fractals** (`"fractals"`): A recursive fractal tree canopy that sways gently in the wind.
+2. **Fractals** (`"fractals"`): A rotating and swaying recursive symmetric fractal mandala centered on the screen.
 3. **Vector** (`"vector"`): A floating constellation node network with lines connecting close elements.
 4. **Dots** (`"dots"`): Soft, glowing floating bokeh circles.
 
