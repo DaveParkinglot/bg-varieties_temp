@@ -45,6 +45,15 @@ let resizeHandler: (() => void) | null = null;
 let mouseMoveHandler: ((e: MouseEvent) => void) | null = null;
 let mouseLeaveHandler: (() => void) | null = null;
 
+// Global state persistence across SPA page navigation
+const globalParticles: any[] = [];
+let globalFractalTime = 0;
+let lastType = "";
+let lastDensity = -1;
+let lastSpeed = -1;
+let lastPalette: any = null;
+
+
 // Helper: Parse string-based RGB or HEX into component numbers
 function parseColor(color: string): { r: number, g: number, b: number } {
   const fallback = { r: 128, g: 128, b: 128 };
@@ -212,17 +221,47 @@ function init() {
   }
 
   // --- SCENE INITIALIZATION ---
-  const particles: any[] = [];
   const perlin = new PerlinNoise();
-  let fractalTime = 0;
 
   function initScene() {
-    particles.length = 0;
+    const typeChanged = lastType !== type;
+    const densityChanged = lastDensity !== density;
+    const speedChanged = lastSpeed !== speed;
+    
+    // Check if palette changed
+    const paletteStr = Array.isArray(paletteName) ? paletteName.join(",") : paletteName;
+    const lastPaletteStr = Array.isArray(lastPalette) ? lastPalette.join(",") : lastPalette;
+    const paletteChanged = lastPaletteStr !== paletteStr;
+
+    // Save current values for next comparison
+    lastType = type;
+    lastDensity = density;
+    lastSpeed = speed;
+    lastPalette = paletteName;
+
+    // If configuration has not changed and we already have particles, map/adjust to the viewport
+    if (globalParticles.length > 0 && !typeChanged && !densityChanged && !paletteChanged) {
+      for (const p of globalParticles) {
+        if (p.x > width) p.x = Math.random() * width;
+        if (p.y > height) p.y = Math.random() * height;
+        if (speedChanged) {
+          const currentSpd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+          if (currentSpd > 0) {
+            const factor = speed / (lastSpeed || 1.0);
+            p.vx *= factor;
+            p.vy *= factor;
+          }
+        }
+      }
+      return;
+    }
+
+    globalParticles.length = 0;
 
     if (type === "vector") {
       const count = Math.floor(80 * (density / 50));
       for (let i = 0; i < count; i++) {
-        particles.push({
+        globalParticles.push({
           x: Math.random() * width,
           y: Math.random() * height,
           vx: (Math.random() - 0.5) * 0.8 * speed,
@@ -234,7 +273,7 @@ function init() {
     } else if (type === "perlin-noise") {
       const count = Math.floor(100 * (density / 50));
       for (let i = 0; i < count; i++) {
-        particles.push({
+        globalParticles.push({
           x: Math.random() * width,
           y: Math.random() * height,
           vx: 0,
@@ -248,7 +287,7 @@ function init() {
     } else if (type === "dots") {
       const count = Math.floor(50 * (density / 50));
       for (let i = 0; i < count; i++) {
-        particles.push({
+        globalParticles.push({
           x: Math.random() * width,
           y: Math.random() * height,
           vx: (Math.random() - 0.5) * 0.3 * speed,
@@ -277,7 +316,7 @@ function init() {
       const forceFactor = 0.08 * speed;
       const maxSpeed = 1.5 * speed;
 
-      for (const p of particles) {
+      for (const p of globalParticles) {
         const noiseVal = perlin.noise2D(p.x * noiseScale, p.y * noiseScale);
         const angle = noiseVal * Math.PI * 4;
 
@@ -313,7 +352,7 @@ function init() {
     } else if (type === "vector") {
       ctx.clearRect(0, 0, width, height);
 
-      for (const p of particles) {
+      for (const p of globalParticles) {
         p.x += p.vx;
         p.y += p.vy;
 
@@ -338,10 +377,10 @@ function init() {
       }
 
       const maxDist = 120;
-      for (let i = 0; i < particles.length; i++) {
-        const p1 = particles[i];
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
+      for (let i = 0; i < globalParticles.length; i++) {
+        const p1 = globalParticles[i];
+        for (let j = i + 1; j < globalParticles.length; j++) {
+          const p2 = globalParticles[j];
           const dx = p1.x - p2.x;
           const dy = p1.y - p2.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
@@ -375,7 +414,7 @@ function init() {
     } else if (type === "dots") {
       ctx.clearRect(0, 0, width, height);
 
-      for (const p of particles) {
+      for (const p of globalParticles) {
         const pSize = p.r + Math.sin(time * p.pulseSpeed + p.pulsePhase) * 4;
 
         p.x += p.vx;
@@ -412,9 +451,9 @@ function init() {
       }
     } else if (type === "fractals") {
       ctx.clearRect(0, 0, width, height);
-      fractalTime += 0.005 * speed;
+      globalFractalTime += 0.005 * speed;
 
-      const rotation = fractalTime * 0.2;
+      const rotation = globalFractalTime * 0.2;
       const cx = width / 2;
       const cy = height / 2;
       
@@ -424,7 +463,7 @@ function init() {
       
       for (let i = 0; i < branches; i++) {
         const startAngle = rotation + (i * Math.PI * 2 / branches);
-        drawMandala(cx, cy, baseLength, startAngle, maxDepth, fractalTime);
+        drawMandala(cx, cy, baseLength, startAngle, maxDepth, globalFractalTime);
       }
     }
 
