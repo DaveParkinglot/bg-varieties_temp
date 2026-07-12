@@ -94,30 +94,68 @@
     "vitest": "^2.1.9"
   },
   "quartz": {
-    "name": "plugin-template",
-    "displayName": "Plugin Template",
-    "category": "transformer",
+    "name": "bg-varieties",
+    "displayName": "Background Varieties",
+    "category": [
+      "component"
+    ],
     "version": "1.0.0",
     "quartzVersion": ">=5.0.0",
     "dependencies": [],
     "defaultOrder": 50,
     "defaultEnabled": true,
-    "defaultOptions": {},
+    "defaultOptions": {
+      "type": "vector",
+      "zIndex": -2,
+      "opacity": 0.4,
+      "speedMultiplier": 1.0,
+      "density": 50,
+      "interactive": true,
+      "theme": "auto",
+      "palette": "cosmic"
+    },
     "optionSchema": {
-      "highlightToken": {
+      "type": {
         "type": "enum",
         "values": [
-          "==",
-          "**",
-          "~~"
+          "perlin-noise",
+          "fractals",
+          "vector",
+          "dots"
         ]
+      },
+      "zIndex": {
+        "type": "number"
+      },
+      "opacity": {
+        "type": "number"
+      },
+      "speedMultiplier": {
+        "type": "number"
+      },
+      "density": {
+        "type": "number"
+      },
+      "interactive": {
+        "type": "boolean"
+      },
+      "theme": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "light",
+          "dark"
+        ]
+      },
+      "palette": {
+        "type": "string"
       }
     },
     "components": {
-      "ExampleComponent": {
-        "displayName": "Example Component",
-        "defaultPosition": "right",
-        "defaultPriority": 50
+      "BgVarieties": {
+        "displayName": "Background Varieties",
+        "defaultPosition": "afterBody",
+        "defaultPriority": 10
       }
     }
   },

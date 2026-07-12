@@ -1,28 +1,21 @@
 {
-  description = "A flake";
+  description = "Development environment for bg-varieties";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs =
-    { nixpkgs, ... }@inputs:
-    let
-      lib = nixpkgs.lib;
-      systems = lib.systems.flakeExposed;
-      pkgsFor = lib.genAttrs systems (system: import nixpkgs { inherit system; });
-      forEachSystem = f: lib.genAttrs systems (system: f pkgsFor.${system});
-    in
-    {
-      packages = forEachSystem (pkgs: { });
-
-      devShells = forEachSystem (pkgs: {
-        default = pkgs.mkShell {
-          packages = with pkgs; [
-            nodejs
-            zip
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = import nixpkgs { inherit system; };
+      in
+      {
+        devShells.default = pkgs.mkShell {
+          buildInputs = [
+            pkgs.nodejs_22
           ];
         };
       });
-    };
 }
