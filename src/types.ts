@@ -73,8 +73,21 @@ export interface BgVarietiesOptions {
    * - "sunset": Warm pinks, oranges, purples.
    * - "minimalist": Grays and soft monochrome accents.
    * - Or a custom string array of colors (e.g. ["#ff0000", "#00ff00"]).
+   * - Or an object specifying separate palettes for light and dark modes:
+   *   e.g., { light: "minimalist", dark: ["#ebdbb2", "#a89984"] }
    * Defaults to "cosmic".
    */
-  palette?: "cosmic" | "aurora" | "nebula" | "sunset" | "minimalist" | string[];
+  palette?:
+    | "cosmic"
+    | "aurora"
+    | "nebula"
+    | "sunset"
+    | "minimalist"
+    | string[]
+    | {
+        light: "cosmic" | "aurora" | "nebula" | "sunset" | "minimalist" | string[];
+        dark: "cosmic" | "aurora" | "nebula" | "sunset" | "minimalist" | string[];
+      };
 }
+
 

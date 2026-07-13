@@ -202,11 +202,16 @@ function init() {
     }
 
     // Resolve color palette
-    if (Array.isArray(paletteName)) {
-      resolvedPalette = paletteName;
+    let activePalette = paletteName;
+    if (paletteName && typeof paletteName === "object" && !Array.isArray(paletteName)) {
+      activePalette = isDarkMode ? paletteName.dark : paletteName.light;
+    }
+
+    if (Array.isArray(activePalette)) {
+      resolvedPalette = activePalette;
     } else {
-      const preset = PALETTES[paletteName as keyof typeof PALETTES] || PALETTES.cosmic;
-      if (paletteName === "minimalist") {
+      const preset = PALETTES[activePalette as keyof typeof PALETTES] || PALETTES.cosmic;
+      if (activePalette === "minimalist") {
         const borderStyle = window.getComputedStyle(document.documentElement);
         const grayColor = borderStyle.getPropertyValue("--lightgray").trim() || 
                           (isDarkMode ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.15)");
@@ -278,9 +283,20 @@ function init() {
     const speedChanged = lastSpeed !== speed;
     
     // Check if palette changed
-    const paletteStr = Array.isArray(paletteName) ? paletteName.join(",") : paletteName;
-    const lastPaletteStr = Array.isArray(lastPalette) ? lastPalette.join(",") : lastPalette;
+    const getPaletteSignature = (p: any): string => {
+      if (!p) return "";
+      if (Array.isArray(p)) return p.join(",");
+      if (typeof p === "object") {
+        const l = Array.isArray(p.light) ? p.light.join(",") : String(p.light || "");
+        const d = Array.isArray(p.dark) ? p.dark.join(",") : String(p.dark || "");
+        return `l:${l}|d:${d}`;
+      }
+      return String(p);
+    };
+    const paletteStr = getPaletteSignature(paletteName);
+    const lastPaletteStr = getPaletteSignature(lastPalette);
     const paletteChanged = lastPaletteStr !== paletteStr;
+
 
     // Save current values for next comparison
     lastType = type;
