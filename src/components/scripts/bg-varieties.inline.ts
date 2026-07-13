@@ -182,13 +182,17 @@ function init() {
                  (themeOpt === "dark");
     if (themeOpt === "light") isDarkMode = false;
 
+    const htmlStyle = window.getComputedStyle(document.documentElement);
     const bodyStyle = window.getComputedStyle(document.body);
-    bgThemeColor = bodyStyle.backgroundColor || (isDarkMode ? "#161618" : "#faf8f8");
+
+    const lightVar = htmlStyle.getPropertyValue("--light").trim() || bodyStyle.getPropertyValue("--light").trim();
+    bgThemeColor = lightVar || bodyStyle.backgroundColor || (isDarkMode ? "#161618" : "#faf8f8");
     if (bgThemeColor === "rgba(0, 0, 0, 0)" || bgThemeColor === "transparent") {
       bgThemeColor = isDarkMode ? "#161618" : "#faf8f8";
     }
 
-    primaryThemeColor = bodyStyle.color || (isDarkMode ? "#ffffff" : "#000000");
+    const darkVar = htmlStyle.getPropertyValue("--dark").trim() || bodyStyle.getPropertyValue("--dark").trim();
+    primaryThemeColor = darkVar || bodyStyle.color || (isDarkMode ? "#ffffff" : "#000000");
     if (primaryThemeColor === "rgba(0, 0, 0, 0)" || primaryThemeColor === "transparent") {
       primaryThemeColor = isDarkMode ? "#ffffff" : "#000000";
     }
@@ -211,30 +215,38 @@ function init() {
   checkTheme();
 
   currentObserver = new MutationObserver(() => {
-    const oldBgColor = bgThemeColor;
-    const oldPrimaryColor = primaryThemeColor;
-    const oldPaletteStr = Array.isArray(resolvedPalette) ? resolvedPalette.join(",") : "";
-    
-    checkTheme();
-    
-    const newPaletteStr = Array.isArray(resolvedPalette) ? resolvedPalette.join(",") : "";
+    requestAnimationFrame(() => {
+      const oldIsDarkMode = isDarkMode;
+      const oldBgColor = bgThemeColor;
+      const oldPrimaryColor = primaryThemeColor;
+      const oldPaletteStr = Array.isArray(resolvedPalette) ? resolvedPalette.join(",") : "";
+      
+      checkTheme();
+      
+      const newPaletteStr = Array.isArray(resolvedPalette) ? resolvedPalette.join(",") : "";
 
-    // If the theme color or palette actually changed, update state
-    if (bgThemeColor !== oldBgColor || primaryThemeColor !== oldPrimaryColor || newPaletteStr !== oldPaletteStr) {
-      // 1. If perlin-noise, fill the canvas with the new background color immediately
-      if (type === "perlin-noise") {
-        ctx.fillStyle = bgThemeColor;
-        ctx.fillRect(0, 0, width, height);
-      } else {
-        // Clear the canvas for other types to avoid any leftover frames/artifacts
-        ctx.clearRect(0, 0, width, height);
-      }
+      // If the theme, background color, or palette actually changed, update state
+      if (
+        isDarkMode !== oldIsDarkMode ||
+        bgThemeColor !== oldBgColor ||
+        primaryThemeColor !== oldPrimaryColor ||
+        newPaletteStr !== oldPaletteStr
+      ) {
+        // 1. If perlin-noise, fill the canvas with the new background color immediately
+        if (type === "perlin-noise") {
+          ctx.fillStyle = bgThemeColor;
+          ctx.fillRect(0, 0, width, height);
+        } else {
+          // Clear the canvas for other types to avoid any leftover frames/artifacts
+          ctx.clearRect(0, 0, width, height);
+        }
 
-      // 2. Update existing particle colors so they match the new theme instantly
-      for (const p of globalParticles) {
-        p.color = getRandomColor();
+        // 2. Update existing particle colors so they match the new theme instantly
+        for (const p of globalParticles) {
+          p.color = getRandomColor();
+        }
       }
-    }
+    });
   });
   currentObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme"] });
 
