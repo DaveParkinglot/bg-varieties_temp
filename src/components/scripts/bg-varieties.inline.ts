@@ -41,6 +41,8 @@ class PerlinNoise {
 // Global cleanup references
 let currentAnimationId: number | null = null;
 let currentObserver: MutationObserver | null = null;
+let currentBodyObserver: MutationObserver | null = null;
+let themeChangeHandler: (() => void) | null = null;
 let resizeHandler: (() => void) | null = null;
 let mouseMoveHandler: ((e: MouseEvent) => void) | null = null;
 let mouseLeaveHandler: (() => void) | null = null;
@@ -177,8 +179,10 @@ function init() {
   let resolvedPalette: string[] = [];
 
   function checkTheme() {
-    isDarkMode = document.documentElement.classList.contains("dark") || 
+    isDarkMode = document.documentElement.getAttribute("saved-theme") === "dark" ||
+                 document.documentElement.classList.contains("dark") || 
                  document.documentElement.getAttribute("data-theme") === "dark" ||
+                 document.body?.classList.contains("theme-dark") ||
                  (themeOpt === "dark");
     if (themeOpt === "light") isDarkMode = false;
 
@@ -214,7 +218,7 @@ function init() {
   }
   checkTheme();
 
-  currentObserver = new MutationObserver(() => {
+  const handleThemeChange = () => {
     requestAnimationFrame(() => {
       const oldIsDarkMode = isDarkMode;
       const oldBgColor = bgThemeColor;
@@ -247,8 +251,18 @@ function init() {
         }
       }
     });
-  });
-  currentObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme"] });
+  };
+
+  currentObserver = new MutationObserver(handleThemeChange);
+  currentObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme", "saved-theme"] });
+
+  if (document.body) {
+    currentBodyObserver = new MutationObserver(handleThemeChange);
+    currentBodyObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  }
+
+  themeChangeHandler = handleThemeChange;
+  document.addEventListener("themechange", themeChangeHandler);
 
   function getRandomColor() {
     if (resolvedPalette.length === 0) return primaryThemeColor;
@@ -574,6 +588,14 @@ function cleanup() {
   if (currentObserver) {
     currentObserver.disconnect();
     currentObserver = null;
+  }
+  if (currentBodyObserver) {
+    currentBodyObserver.disconnect();
+    currentBodyObserver = null;
+  }
+  if (themeChangeHandler) {
+    document.removeEventListener("themechange", themeChangeHandler);
+    themeChangeHandler = null;
   }
   if (resizeHandler) {
     window.removeEventListener("resize", resizeHandler);
