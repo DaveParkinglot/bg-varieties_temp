@@ -52,6 +52,6 @@ var BgVarieties_default = ((opts) => {
 function init(options) {
 }
 
-export { BgVarieties_default as BgVarieties, bgInit };
+export { BgVarieties_default as BgVarieties, init as bgInit };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map
