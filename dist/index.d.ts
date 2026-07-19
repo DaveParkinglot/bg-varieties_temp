@@ -4,4 +4,4 @@ export { PageGenerator, PageMatcher, QuartzComponent, QuartzComponentConstructor
 
 declare function init(options?: Record<string, unknown>): void;
 
-export { init };
+export { bgInit };
